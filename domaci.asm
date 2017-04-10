@@ -197,6 +197,11 @@ Not_Install3d:
 GoodID:
     mov ah, [free_function_id]
     mov [function_id], ah
+    mov ah, 34h
+    int 21h
+    mov ax, es
+    mov [INdos_seg], ax
+    mov [INdos_off], bx
     call _novi_2f
     call _novi_1C
     call _novi_09
@@ -221,3 +226,5 @@ uninstalling_string: db 'Ne mozemo uninstallirati TSR, jer ga nema.$'
 start_str: db '-start'
 stop_str: db  '-stop'
 error_string: db 'Nisu dobro podeseni argumenti komandne linije$'
+INdos_seg: dw 0
+INdos_off: dw 0

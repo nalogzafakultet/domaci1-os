@@ -136,10 +136,14 @@ _stari_1C:
 
 
 timer_int:
+	mov ax, [cs:INdos_seg]
+	mov es, ax
+	mov bx, [cs:INdos_off]
+	cmp [es:bx], byte 0
+	jne _exit
+
 	cmp [cs:alarm_state], byte FINISHED_STATE
 	je _exit
-
-
 
     push cs
     pop ds
@@ -334,7 +338,7 @@ i_ran_out_of_exit_labels:
 	mov bx, ALARM_POSITION_2
 	xor cl, cl
 	call _print_to_video_seg
-
+	; jmp _stop_prog
 
 	iret
 
@@ -359,7 +363,8 @@ _print_to_video_seg:
     ret
 
 MyInt2F:
-
+	cmp 	[cs:alarm_state], byte FINISHED_STATE
+	je idemo_dalje
     cmp     ah, [cs:function_id]   ;Is this call for us?
     je      ItsUs
 
