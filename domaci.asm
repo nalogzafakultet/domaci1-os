@@ -32,6 +32,8 @@ print_error:
 
 
 
+
+
 _start_prog:
     ; mov ah, 0eh
     ; mov al, 'A'
@@ -105,18 +107,102 @@ _start_prog:
     jg print_error
     mov [arg_time_s], al
 
-    call _novi_1C
-    call _novi_09
+    ; -----------
+    ; CHECK 2Fh
+    ; -----------
+
+    mov [free_function_id], byte 0
+    mov cx, 0FFh
+search_loop:
+    mov ah, cl
+    push cx
+    mov al, 0
+    int 2fh
+    pop cx
+
+
+    cmp al, 0
+    je TryNext
+    mov si, string_id_2f
+    push cx
+    mov cx, 8
+    repe cmpsb
+    pop cx
+    je AlreadyThur
+    loop search_loop
+    jmp Not_Install3d
 
     ret
 
 _stop_prog:
-    mov ah, 0eh
-    mov al, 'B'
-    int 10h
+    ; mov al, '$'
+    ; mov ah, 0eh
+    ; int 10h
+    mov cx, 0FFh
+.search_loop:
+    mov ah, cl
+    push cx
+    mov al, 0
+    int 2fh
+    pop cx
+    cmp al, 0
+    je .try_next
+    mov si, string_id_2f
+    push cx
+    mov cx, 8
+    repe cmpsb
+    pop cx
+    je .already_there
+.try_next:
+    loop .search_loop
+    jmp .not_installed
+
+.not_installed:
+    mov dx, uninstalling_string
+    mov ah, 09h
+    int 21h
+    ret
+
+.already_there:
+    push ds
+    push es
+    pop ds
+
+    call _stari_2f
+    call _stari_1C
+    call _stari_09
+    pop ds
     ret
 
 
+TryNext:
+    mov [free_function_id], cl
+    loop search_loop
+    jmp Not_Install3d
+
+AlreadyThur:
+    mov dx, tsr_already_installed_string
+    mov ah, 09h
+    int 21h
+    ret
+
+Not_Install3d:
+    cmp [free_function_id], byte 0
+    jne GoodID
+    mov dx, too_many_tsrs
+    mov ah, 09h
+    int 21h
+    ret
+
+GoodID:
+    mov ah, [free_function_id]
+    mov [function_id], ah
+    call _novi_2f
+    call _novi_1C
+    call _novi_09
+    mov ah, 31h
+    mov dx, 0FFh
+    int 21h
 
 
 %include "inter.asm"
@@ -124,9 +210,14 @@ _stop_prog:
 
 segment .data
 
-start_str: db '-start'
-stop_str: db  '-stop'
-error_string: db 'Nisu dobro podeseni argumenti komandne linije$'
+
 arg_time_h: db 0 ; dati sati alarma
 arg_time_m: db 0 ; dati minuti alarma
 arg_time_s: db 0 ; date sekunde alarma
+free_function_id: db 0
+tsr_already_installed_string: db 'Jedna instanca TSR-a je vec pokrenuta.$'
+too_many_tsrs: db 'Preveliki broj instanci TSR-ova je pokrenut, gospodine Milojkovicu.$'
+uninstalling_string: db 'Ne mozemo uninstallirati TSR, jer ga nema.$'
+start_str: db '-start'
+stop_str: db  '-stop'
+error_string: db 'Nisu dobro podeseni argumenti komandne linije$'

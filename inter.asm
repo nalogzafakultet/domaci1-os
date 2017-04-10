@@ -48,7 +48,6 @@ _stari_09:
 	sti
 	ret
 
-
 snooze_handle:
 	pusha
 	cmp [cs:alarm_state], byte RINGING_STATE
@@ -95,6 +94,33 @@ _novi_1C:
 	sti
 	ret
 
+_novi_2f:
+	cli
+	xor ax, ax
+	mov es, ax
+	mov bx, [es:2fh*4]
+	mov [old_2fh_off], bx
+	mov bx, [es:2fh*4+2]
+	mov [old_2fh_seg], bx
+
+; Modifikacija u tabeli vektora prekida tako da pokazuje na nasu rutinu
+	mov dx, MyInt2F
+	mov [es:2fh*4], dx
+	mov ax, cs
+	mov [es:2fh*4+2], ax
+	sti
+	ret
+
+_stari_2f:
+	cli
+	xor ax, ax
+	mov es, ax
+	mov ax, [old_2fh_seg]
+	mov [es:2fh*4+2], ax
+	mov dx, [old_2fh_off]
+	mov [es:2fh*4], dx
+	sti
+	ret
 
 ; Vratiti stari vektor prekida 0x1C
 _stari_1C:
@@ -332,6 +358,25 @@ _print_to_video_seg:
 .exit_print:
     ret
 
+MyInt2F:
+
+    cmp     ah, [cs:function_id]   ;Is this call for us?
+    je      ItsUs
+
+idemo_dalje:
+	push word [cs:old_2fh_seg]
+	push word [cs:old_2fh_off]
+	retf
+
+ItsUs:
+	cmp al, 0
+	jne idemo_dalje
+	mov al, 0FFh
+	mov di, string_id_2f
+	mov dx, cs
+	mov es, dx
+	iret
+
 
 
 segment .data
@@ -340,6 +385,8 @@ old_int_seg: dw 0
 old_int_off: dw 0
 old_09h_seg: dw 0
 old_09h_off: dw 0
+old_2fh_seg: dw 0
+old_2fh_off: dw 0
 diff_time_h: db 0 ; razlika sata
 diff_time_m: db 0 ; razlika minuta
 diff_time_s: db 0 ; razlika sekunde
@@ -348,3 +395,5 @@ printing_string: times 9 db 0
 counter: db 183
 alarm_state: db 0
 spacez: db '        ',0
+function_id: db 0
+string_id_2f: db 'MI SMO!1'
