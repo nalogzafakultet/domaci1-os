@@ -27,19 +27,7 @@ print_error:
         int 21h
         ret
 
-
-
-
-
-
-
-
 _start_prog:
-    ; mov ah, 0eh
-    ; mov al, 'A'
-    ; int 10h
-    ; ret
-
 
 
     ; ---------------
@@ -211,6 +199,7 @@ GoodID:
 
 
 %include "inter.asm"
+%include "installs.asm"
 
 
 segment .data
